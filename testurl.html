@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spotify Test</title>
+</head>
+<body>
+    <button id="login">Connect to Spotify</button>
+    
+    <script>
+        // Test your client ID
+        const clientId = '94b4d951b9334492bcdaa4a24dce7e10';
+        const redirectUri = 'https://mabillionaire.github.io/musicmap/';
+        
+        document.getElementById('login').addEventListener('click', () => {
+            const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=user-read-private`;
+            window.location.href = authUrl;
+        });
+    </script>
+</body>
+</html>

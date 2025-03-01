@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoMusic - Geographic Music Playlist with Spotify</title>
+    <!-- Mapbox CSS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #map {
+            flex: 1;
+            width: 100%;
+            min-height: 400px;
+        }
+        #player-container {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-top: 1px solid #ccc;
+        }
+        #playlist-container {
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border-top: 1px solid #eee;
+        }
+        .playlist-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .playlist-item:hover {
+            background-color: #e6e6e6;
+        }
+        .playlist-item.playing {
+            background-color: #d1e7dd;
+        }
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .spotify-login {
+            background-color: #1DB954;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .spotify-login:hover {
+            background-color: #1aa34a;
+        }
+        .controls button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .controls button:hover {
+            background-color: #2980b9;
+        }
+        .now-playing {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .now-playing img {
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+        #origin-info {
+            margin-top: 5px;
+            font-style: italic;
+        }
+        .song-time {
+            color: #666;
+        }
+        .mapboxgl-popup-content {
+            max-width: 250px;
+            padding: 15px;
+        }
+        .album-art {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+        .playlist-select {
+            margin: 10px 0;
+            padding: 8px;
+            width: 100%;
+            max-width: 300px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        .song-details {
+            flex: 1;
+        }
+        .login-container {
+            text-align: center;
+            padding: 20px;
+        }
+        #spotify-player {
+            margin-top: 10px;
+        }
+        /* New styles for location editing */
+        .location-editor {
+            display: flex;
+            gap: 5px;
+            margin-top: 2px;
+        }
+        .location-editor input {
+            flex: 1;
+            padding: 3px 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .location-editor button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .location-editor button:hover {
+            background-color: #218838;
+        }
+        .edit-location-btn {
+            background-color: transparent;
+            border: none;
+            color: #007bff;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+            padding: 0;
+        }
+        .edit-location-btn:hover {
+            text-decoration: underline;
+        }
+        #location-search-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .modal-header h3 {
+            margin: 0;
+        }
+        .close-modal {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        #location-search-input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #search-location-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #search-results {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .search-result-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .search-result-item:hover {
+            background-color: #f5f5f5;
+        }
+        .save-locations-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .save-locations-btn:hover {
+            background-color: #218838;
+        }
+        #save-locations-container {
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+            display: none;
+        }
+        .unknown-location {
+            color: #dc3545;
+            font-style: italic;
+        }
+        .custom-location {
+            color: #28a745;
+            font-weight: bold;
+        }
+        /* Custom marker style */
+        .marker {
+            background-size: cover;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            background-color: #3498db;
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        .marker.playing {
+            background-color: #1DB954;
+            transform: scale(1.2);
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="map"></div>
+        <div id="player-container">
+            <div id="spotify-login-section" class="login-container">
+                <p>Connect to Spotify to load your playlists</p>
+                <button class="spotify-login" id="login-button">Connect to Spotify</button>
+            </div>
+            <div id="spotify-connected-section" style="display: none;">
+                <label for="playlist-select">Select a playlist:</label>
+                <select id="playlist-select" class="playlist-select">
+                    <option value="">Loading playlists...</option>
+                </select>
+                <div class="controls">
+                    <div>
+                        <button id="prev-btn">Previous</button>
+                        <button id="play-btn">Play</button>
+                        <button id="next-btn">Next</button>
+                    </div>
+                </div>
+                <div class="now-playing">
+                    <img id="current-album-art" src="" width="60" height="60" style="display: none;">
+                    <div>
+                        <div id="now-playing-text">No song playing</div>
+                        <div id="origin-info"></div>
+                    </div>
+                </div>
+                <div id="spotify-player"></div>
+                <div id="save-locations-container">
+                    <p>You've updated song locations. Would you like to save them for future sessions?</p>
+                    <button id="save-locations-btn" class="save-locations-btn">Save Custom Locations</button>
+                </div>
+            </div>
+        </div>
+        <div id="playlist-container"></div>
+    </div>
+
+    <!-- Location Search Modal -->
+    <div id="location-search-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Set Location for: <span id="current-song-title"></span></h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <input type="text" id="location-search-input" placeholder="Enter a city, landmark, or place">
+            <button id="search-location-btn">Search</button>
+            <div id="search-results"></div>
+        </div>
+    </div>
+
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script>
+        console.log("Script initializing...");
+        
+        // Spotify API Configuration
+        const clientId = '94b4d951b9334492bcdaa4a24dce7e10';
+        const redirectUri = 'https://mabillionaire.github.io/musicmap/';
+        const scopes = 'user-read-private user-read-email playlist-read-private streaming user-read-playback-state user-modify-playback-state';
+        
+        // Mapbox Access Token
+        const mapboxToken = 'pk.eyJ1IjoibWFiaWxsaW9uYWlyZSIsImEiOiJja3Q2MXBkODYwOHp2MnZwOGRrZ2l4ZzI3In0.vww8YU1afCCuZtHZbOeQ-w';
+        
+        // Initialize map
+        let map;
+        try {
+            console.log("Initializing Mapbox map...");
+            mapboxgl.accessToken = mapboxToken;
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v12',
+                center: [0, 20], // [longitude, latitude]
+                zoom: 2
+            });
+            
+            // Add navigation controls
+            map.addControl(new mapboxgl.NavigationControl());
+            
+            console.log("Mapbox map initialized successfully");
+        } catch (error) {
+            console.error("Error initializing map:", error);
+            // Fallback in case map fails to initialize
+            document.getElementById('map').innerHTML = '<div style="padding: 20px; text-align: center; background-color: #f8d7da; color: #721c24;">Error loading map. Please check console for details.</div>';
+        }
+
+        // Elements
+        let loginButton, spotifyLoginSection, spotifyConnectedSection, playlistSelect, 
+            playlistContainer, playBtn, prevBtn, nextBtn, nowPlayingText, originInfo, 
+            currentAlbumArt, spotifyPlayerDiv, saveLocationsContainer, saveLocationsBtn,
+            locationSearchModal, closeModalBtn, currentSongTitle, locationSearchInput, 
+            searchLocationBtn, searchResults;
+
+        // Variables
+        let userToken = '';
+        let currentPlaylist = [];
+        let currentSongIndex = 0;
+        let isPlaying = false;
+        let player;
+        let deviceId;
+        let markers = {};
+        let currentEditingSongId = null;
+        let customLocations = {};
+        let popups = {};
+
+        // Initialize elements after DOM is loaded
+        function initializeElements() {
+            console.log("Initializing DOM elements...");
+            loginButton = document.getElementById('login-button');
+            spotifyLoginSection = document.getElementById('spotify-login-section');
+            spotifyConnectedSection = document.getElementById('spotify-connected-section');
+            playlistSelect = document.getElementById('playlist-select');
+            playlistContainer = document.getElementById('playlist-container');
+            playBtn = document.getElementById('play-btn');
+            prevBtn = document.getElementById('prev-btn');
+            nextBtn = document.getElementById('next-btn');
+            nowPlayingText = document.getElementById('now-playing-text');
+            originInfo = document.getElementById('origin-info');
+            currentAlbumArt = document.getElementById('current-album-art');
+            spotifyPlayerDiv = document.getElementById('spotify-player');
+            saveLocationsContainer = document.getElementById('save-locations-container');
+            saveLocationsBtn = document.getElementById('save-locations-btn');
+            
+            // Location search modal elements
+            locationSearchModal = document.getElementById('location-search-modal');
+            closeModalBtn = document.querySelector('.close-modal');
+            currentSongTitle = document.getElementById('current-song-title');
+            locationSearchInput = document.getElementById('location-search-input');
+            searchLocationBtn = document.getElementById('search-location-btn');
+            searchResults = document.getElementById('search-results');
+
+            // Log elements to verify they're found
+            console.log("Login button found:", !!loginButton);
+            console.log("Map initialized:", !!map);
+            
+            // Initialize event listeners
+            if (loginButton) {
+                loginButton.addEventListener('click', () => {
+                    try {
+                        console.log("Attempting Spotify login...");
+                        const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
+                        console.log("Auth URL:", authUrl);
+                        window.location.href = authUrl;
+                    } catch (error) {
+                        console.error("Error during Spotify login:", error);
+                        alert("Error connecting to Spotify. Please check console for details.");
+                    }
+                });
+            } else {
+                console.error("Could not initialize login button");
+            }
+            
+            // Add event listeners for playback controls if they exist
+            if (playBtn && nextBtn && prevBtn) {
+                playBtn.addEventListener('click', togglePlay);
+                nextBtn.addEventListener('click', playNext);
+                prevBtn.addEventListener('click', playPrevious);
+            }
+            
+            // Add event listeners for location search modal if elements exist
+            if (closeModalBtn && locationSearchInput && searchLocationBtn) {
+                closeModalBtn.addEventListener('click', closeLocationModal);
+                locationSearchInput.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter') {
+                        searchLocation(locationSearchInput.value);
+                    }
+                });
+                searchLocationBtn.addEventListener('click', () => {
+                    searchLocation(locationSearchInput.value);
+                });
+            }
+            
+            // Add event listener for saving custom locations
+            if (saveLocationsBtn) {
+                saveLocationsBtn.addEventListener('click', saveCustomLocations);
+            }
+        }
+
+        // Check if we're returning from Spotify auth
+        function checkAuth() {
+            const hash = window.location.hash.substring(1);
+            let authParams = {};
+            
+            if (hash) {
+                hash.split('&').forEach(pair => {
+                    const [key, value] = pair.split('=');
+                    authParams[key] = value;
+                });
+                
+                if (authParams.access_token) {
+                    userToken = authParams.access_token;
+                    window.history.replaceState(null, null, ' '); // Clear hash from URL
+                    initializeSpotify();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Initialize Spotify connection
+        function initializeSpotify() {
+            console.log("Initializing Spotify connection...");
+            spotifyLoginSection.style.display = 'none';
+            spotifyConnectedSection.style.display = 'block';
+            
+            // Load Spotify Web Playback SDK
+            const script = document.createElement('script');
+            script.src = 'https://sdk.scdn.co/spotify-player.js';
+            document.body.appendChild(script);
+
+            // Load user's playlists
+            fetchPlaylists();
+            
+            // Load saved custom locations
+            loadCustomLocations();
+        }
+
+        // Load custom locations from localStorage
+        function loadCustomLocations() {
+            const savedLocations = localStorage.getItem('geomusic_custom_locations');
+            if (savedLocations) {
+                try {
+                    customLocations = JSON.parse(savedLocations);
+                } catch (error) {
+                    console.error('Error parsing saved locations:', error);
+                    customLocations = {};
+                }
+            }
+        }
+
+        // Save custom locations to localStorage
+        function saveCustomLocations() {
+            localStorage.setItem('geomusic_custom_locations', JSON.stringify(customLocations));
+            saveLocationsContainer.style.display = 'none';
+            alert('Custom locations saved successfully!');
+        }
+
+        // Fetch user's playlists
+        async function fetchPlaylists() {
+            try {
+                console.log("Fetching user playlists...");
+                const response = await fetch('https://api.spotify.com/v1/me/playlists?limit=50', {
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch playlists');
+                
+                const data = await response.json();
+                console.log(`Found ${data.items.length} playlists`);
+                
+                // Clear select options
+                playlistSelect.innerHTML = '';
+                
+                // Add default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select a playlist';
+                playlistSelect.appendChild(defaultOption);
+                
+                // Add playlists to select
+                data.items.forEach(playlist => {
+                    const option = document.createElement('option');
+                    option.value = playlist.id;
+                    option.textContent = playlist.name;
+                    playlistSelect.appendChild(option);
+                });
+                
+                // Add event listener for playlist selection
+                playlistSelect.addEventListener('change', handlePlaylistSelection);
+            } catch (error) {
+                console.error('Error fetching playlists:', error);
+                alert('Failed to load playlists. Please try reconnecting to Spotify.');
+            }
+        }
+
+        // Handle playlist selection
+        async function handlePlaylistSelection() {
+            const playlistId = playlistSelect.value;
+            if (!playlistId) return;
+            
+            playlistContainer.innerHTML = '<div class="loading">Loading songs and finding their origins...</div>';
+            
+            try {
+                console.log(`Loading playlist: ${playlistId}`);
+                // Fetch playlist tracks
+                const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+                    headers: {
+                        'Authorization': `Bearer ${userToken}`
+                    }
+                });
+                
+                if (!response.ok) throw new Error('Failed to fetch playlist tracks');
+                
+                const data = await response.json();
+                console.log(`Found ${data.items.length} tracks in playlist`);
+                
+                // Process tracks
+                currentPlaylist = [];
+                
+                // Clear previous markers
+                clearAllMarkers();
+                
+                // Process tracks and get geographic data
+                await processTracksWithGeoData(data.items);
+                
+                // Render playlist
+                renderPlaylist();
+                
+                // Hide save locations container
+                saveLocationsContainer.style.display = 'none';
+            } catch (error) {
+                console.error('Error loading playlist:', error);
+                playlistContainer.innerHTML = 'Failed to load playlist. Please try again.';
+            }
+        }
+
+        // Clear all markers from the map
+        function clearAllMarkers() {
+            // Remove all existing markers
+            Object.values(markers).forEach(marker => {
+                marker.remove();
+            });
+            markers = {};
+            popups = {};
+        }
+
+        // Process tracks and get geographic data
+        async function processTracksWithGeoData(tracks) {
+            console.log("Processing tracks to get geographic data...");
+            // Array to hold all track info
+            const processedTracks = tracks.map(item => {
+                const track = item.track;
+                if (!track) return null; // Skip null tracks
+                
+                // Basic track info
+                const trackInfo = {
+                    id: track.id,
+                    title: track.name,
+                    artist: track.artists.map(a => a.name).join(', '),
+                    duration: Math.floor(track.duration_ms / 1000),
+                    albumArt: track.album.images.length > 0 ? track.album.images[0].url : null,
+                    uri: track.uri
+                };
+                
+                // Check if we have a custom location saved for this track
+                if (customLocations[track.id]) {
+                    trackInfo.location = customLocations[track.id].name;
+                    trackInfo.coordinates = customLocations[track.id].coordinates;
+                    trackInfo.isCustomLocation = true;
+                } else {
+                    // If no custom location, set as unknown
+                    trackInfo.location = 'Unknown Location';
+                    trackInfo.coordinates = [0, 0]; // [longitude, latitude] for Mapbox
+                }
+                
+                /* Commented out: Spotify metadata location lookup */
+                
+                return trackInfo;
+            });
+            
+            // Filter out null tracks and add to playlist
+            currentPlaylist = processedTracks.filter(track => track !== null);
+            console.log(`Processed ${currentPlaylist.length} tracks with location data`);
+            
+            // Add markers for each song location
+            currentPlaylist.forEach(song => {
+                // Only add markers for tracks with valid coordinates
+                if (song.location !== 'Unknown Location' && (song.coordinates[0] !== 0 || song.coordinates[1] !== 0)) {
+                    addMarkerForSong(song);
+                }
+            });
+            
+            // Set view to see all markers
+            updateMapView();
+        }
+        
+        // Add marker for a song
+        function addMarkerForSong(song) {
+            // Remove existing marker if any
+            if (markers[song.id]) {
+                markers[song.id].remove();
+            }
+            
+            // Only add markers for tracks with valid coordinates and ensure longitude first for Mapbox
+            if (song.location !== 'Unknown Location' && (song.coordinates[0] !== 0 || song.coordinates[1] !== 0)) {
+                // Create a custom HTML element for the marker
+                const el = document.createElement('div');
+                el.className = 'marker';
+                
+                // Adjust coordinates order for Mapbox if needed
+                // Mapbox uses [longitude, latitude]
+                let lngLat = song.coordinates;
+                
+                // Make sure coordinates are in the right order (Mapbox expects [lng, lat])
+                if (Math.abs(lngLat[0]) <= 90 && Math.abs(lngLat[1]) <= 180) {
+                    // If the first coordinate is likely latitude, swap them
+                    lngLat = [lngLat[1], lngLat[0]];
+                }
+                
+                // Create popup content
+                const popupContent = `
+                    <strong>${song.title}</strong><br>
+                    ${song.artist}<br>
+                    ${song.location}
+                    ${song.isCustomLocation ? '<br><em>(Custom location)</em>' : ''}
+                `;
+                
+                const popup = new mapboxgl.Popup({ offset: 25 })
+                    .setHTML(popupContent);
+                
+                // Create the marker
+                const marker = new mapboxgl.Marker(el)
+                    .setLngLat(lngLat)
+                    .setPopup(popup)
+                    .addTo(map);
+                
+                markers[song.id] = marker;
+                popups[song.id] = popup;
+            }
+        }
+        
+        // Update map view to show all markers
+        function updateMapView() {
+            if (Object.keys(markers).length === 0) {
+                // If no markers, set default view
+                map.flyTo({
+                    center: [0, 20],
+                    zoom: 2
+                });
+                return;
+            }
+            
+            // Calculate bounds from all markers
+            const bounds = new mapboxgl.LngLatBounds();
+            
+            Object.values(markers).forEach(marker => {
+                bounds.extend(marker.getLngLat());
+            });
+            
+            // Fit map to bounds with padding
+            map.fitBounds(bounds, {
+                padding: 50,
+                maxZoom: 15
+            });
+        }
+
+        // Render playlist
+        function renderPlaylist() {
+            console.log("Rendering playlist...");
+            playlistContainer.innerHTML = '';
+            
+            let hasUnknownLocations = false;
+            
+            currentPlaylist.forEach((song, index) => {
+                const listItem = document.createElement('div');
+                listItem.className = `playlist-item ${index === currentSongIndex && isPlaying ? 'playing' : ''}`;
+                
+                const albumArtHtml = song.albumArt ? 
+                    `<img src="${song.albumArt}" alt="Album art" class="album-art">` : '';
+                
+                // Check if location is unknown
+                if (song.location === 'Unknown Location') {
+                    hasUnknownLocations = true;
+                }
+                
+                const locationClassName = song.location === 'Unknown Location' 
+                    ? 'unknown-location' 
+                    : (song.isCustomLocation ? 'custom-location' : '');
+                
+                listItem.innerHTML = `
+                    ${albumArtHtml}
+                    <div class="song-details">
+                        <strong>${song.title}</strong>
+                        <div>${song.artist}</div>
+                        <div>
+                            <span class="${locationClassName}">${song.location}</span>
+                            <button class="edit-location-btn" data-song-id="${song.id}">Edit location</button>
+                        </div>
+                    </div>
+                    <div class="song-time">${formatTime(song.duration)}</div>
+                `;
+                
+                // Add event listener for playing the song
+                listItem.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('edit-location-btn')) {
+                        currentSongIndex = index;
+                        playSong(song);
+                    }
+                });
+                
+                playlistContainer.appendChild(listItem);
+            });
+            
+            // Add event listeners for edit location buttons
+            document.querySelectorAll('.edit-location-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const songId = e.target.dataset.songId;
+                    openLocationModal(songId);
+                });
+            });
+            
+            if (currentPlaylist.length === 0) {
+                playlistContainer.innerHTML = '<div class="loading">No songs found or locations could not be determined</div>';
+            }
+        }
+        
+        // Open location search modal
+        function openLocationModal(songId) {
+            currentEditingSongId = songId;
+            const song = currentPlaylist.find(s => s.id === songId);
+            
+            if (song) {
+                currentSongTitle.textContent = song.title;
+                locationSearchInput.value = song.location !== 'Unknown Location' ? song.location : '';
+                locationSearchModal.style.display = 'block';
+                locationSearchInput.focus();
+                
+                // Clear previous search results
+                searchResults.innerHTML = '';
+            }
+        }
+        
+        // Close location search modal
+        function closeLocationModal() {
+            locationSearchModal.style.display = 'none';
+            currentEditingSongId = null;
+            searchResults.innerHTML = '';
+        }
+        
+        // Search for location using Mapbox Geocoding
+        async function searchLocation(query) {
+            if (!query.trim()) {
+                searchResults.innerHTML = '<p>Please enter a location to search</p>';
+                return;
+            }
+            
+            searchResults.innerHTML = '<p>Searching...</p>';
+            
+            try {
+                console.log(`Searching for location using Mapbox: ${query}`);
+                
+                // Mapbox geocoding API URL
+                const geocodingUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&limit=5`;
+                console.log("Making Mapbox geocoding request");
+                
+                // Make the fetch request
+                const response = await fetch(geocodingUrl);
+                
+                // Log full response for debugging
+                console.log("Response status:", response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`Geocoding failed with status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log("Mapbox response:", data);
+                
+                if (data && data.features && data.features.length > 0) {
+                    searchResults.innerHTML = '';
+                    
+                    data.features.forEach(feature => {
+                        const resultItem = document.createElement('div');
+                        resultItem.className = 'search-result-item';
+                        resultItem.textContent = feature.place_name;
+                        
+                        resultItem.addEventListener('click', () => {
+                            // Convert Mapbox format to our expected format
+                            const locationData = {
+                                display_name: feature.place_name,
+                                lat: feature.center[1], // Mapbox uses [longitude, latitude] format
+                                lon: feature.center[0]
+                            };
+                            setCustomLocation(locationData);
+                        });
+                        
+                        searchResults.appendChild(resultItem);
+                    });
+                } else {
+                    searchResults.innerHTML = '<p>No locations found. Try a different search term.</p>';
+                    // Fall back to local database
+                    localSearchLocation(query);
+                }
+            } catch (error) {
+                console.error('Error searching for location with Mapbox:', error);
+                
+                // If Mapbox fails, try the local database as fallback
+                localSearchLocation(query);
+            }
+        }
+
+        // Local search function as fallback
+        function localSearchLocation(query) {
+            console.log("Using local database fallback for location search:", query);
+            
+            // Local database of major cities and countries
+            const locations = [
+                // Major US cities
+                { name: "New York", country: "USA", display_name: "New York, USA", lat: 40.7128, lon: -74.0060 },
+                { name: "Los Angeles", country: "USA", display_name: "Los Angeles, USA", lat: 34.0522, lon: -118.2437 },
+                { name: "Chicago", country: "USA", display_name: "Chicago, USA", lat: 41.8781, lon: -87.6298 },
+                { name: "Houston", country: "USA", display_name: "Houston, USA", lat: 29.7604, lon: -95.3698 },
+                { name: "Phoenix", country: "USA", display_name: "Phoenix, USA", lat: 33.4484, lon: -112.0740 },
+                { name: "Philadelphia", country: "USA", display_name: "Philadelphia, USA", lat: 39.9526, lon: -75.1652 },
+                { name: "San Antonio", country: "USA", display_name: "San Antonio, USA", lat: 29.4241, lon: -98.4936 },
+                { name: "San Diego", country: "USA", display_name: "San Diego, USA", lat: 32.7157, lon: -117.1611 },
+                { name: "Dallas", country: "USA", display_name: "Dallas, USA", lat: 32.7767, lon: -96.7970 },
+                { name: "San Francisco", country: "USA", display_name: "San Francisco, USA", lat: 37.7749, lon: -122.4194 },
+                { name: "Austin", country: "USA", display_name: "Austin, USA", lat: 30.2672, lon: -97.7431 },
+                { name: "Seattle", country: "USA", display_name: "Seattle, USA", lat: 47.6062, lon: -122.3321 },
+                { name: "Denver", country: "USA", display_name: "Denver, USA", lat: 39.7392, lon: -104.9903 },
+                { name: "Boston", country: "USA", display_name: "Boston, USA", lat: 42.3601, lon: -71.0589 },
+                { name: "Nashville", country: "USA", display_name: "Nashville, USA", lat: 36.1627, lon: -86.7816 },
+                
+                // Major world cities
+                { name: "London", country: "UK", display_name: "London, UK", lat: 51.5074, lon: -0.1278 },
+                { name: "Paris", country: "France", display_name: "Paris, France", lat: 48.8566, lon: 2.3522 },
+                { name: "Berlin", country: "Germany", display_name: "Berlin, Germany", lat: 52.5200, lon: 13.4050 },
+                { name: "Madrid", country: "Spain", display_name: "Madrid, Spain", lat: 40.4168, lon: -3.7038 },
+                { name: "Rome", country: "Italy", display_name: "Rome, Italy", lat: 41.9028, lon: 12.4964 },
+                { name: "Tokyo", country: "Japan", display_name: "Tokyo, Japan", lat: 35.6762, lon: 139.6503 },
+                { name: "Seoul", country: "South Korea", display_name: "Seoul, South Korea", lat: 37.5665, lon: 126.9780 },
+                { name: "Beijing", country: "China", display_name: "Beijing, China", lat: 39.9042, lon: 116.4074 },
+                { name: "Sydney", country: "Australia", display_name: "Sydney, Australia", lat: -33.8688, lon: 151.2093 },
+                { name: "Toronto", country: "Canada", display_name: "Toronto, Canada", lat: 43.6532, lon: -79.3832 },
+                { name: "Mumbai", country: "India", display_name: "Mumbai, India", lat: 19.0760, lon: 72.8777 },
+                
+                // Countries
+                { name: "United States", country: "", display_name: "United States", lat: 37.0902, lon: -95.7129 },
+                { name: "UK", country: "", display_name: "United Kingdom", lat: 55.3781, lon: -3.4360 },
+                { name: "Canada", country: "", display_name: "Canada", lat: 56.1304, lon: -106.3468 },
+                { name: "Australia", country: "", display_name: "Australia", lat: -25.2744, lon: 133.7751 },
+                { name: "Germany", country: "", display_name: "Germany", lat: 51.1657, lon: 10.4515 },
+                { name: "France", country: "", display_name: "France", lat: 46.2276, lon: 2.2137 },
+                { name: "Japan", country: "", display_name: "Japan", lat: 36.2048, lon: 138.2529 },
+                { name: "China", country: "", display_name: "China", lat: 35.8617, lon: 104.1954 },
+                { name: "India", country: "", display_name: "India", lat: 20.5937, lon: 78.9629 }
+            ];
+            
+            // Perform search
+            const searchQuery = query.toLowerCase();
+            const results = locations.filter(location => 
+                location.name.toLowerCase().includes(searchQuery) || 
+                location.country.toLowerCase().includes(searchQuery) ||
+                location.display_name.toLowerCase().includes(searchQuery)
+            );
+            
+            console.log(`Found ${results.length} results in local database for "${query}"`);
+            
+            // Display results
+            if (results.length > 0) {
+                searchResults.innerHTML = '';
+                
+                results.forEach(result => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'search-result-item';
+                    resultItem.textContent = result.display_name;
+                    
+                    resultItem.addEventListener('click', () => {
+                        setCustomLocation(result);
+                    });
+                    
+                    searchResults.appendChild(resultItem);
+                });
+            } else {
+                searchResults.innerHTML = '<p>No locations found. Try a different search term.</p>';
+            }
+        }
+        
+        // Set custom location for song
+        function setCustomLocation(locationData) {
+            if (!currentEditingSongId) return;
+            
+            // Find song in playlist
+            const songIndex = currentPlaylist.findIndex(song => song.id === currentEditingSongId);
+            
+            if (songIndex !== -1) {
+                console.log(`Setting custom location for song: ${currentPlaylist[songIndex].title}`);
+                const song = currentPlaylist[songIndex];
+                
+                // Update song data
+                song.location = locationData.display_name.split(',')[0].trim();
+                // Store coordinates in [longitude, latitude] order for Mapbox
+                song.coordinates = [parseFloat(locationData.lon), parseFloat(locationData.lat)];
+                song.isCustomLocation = true;
+                
+                // Save to custom locations
+                customLocations[song.id] = {
+                    name: song.location,
+                    coordinates: song.coordinates
+                };
+                
+                // Update marker
+                addMarkerForSong(song);
+                
+                // Update map view
+                updateMapView();
+                
+                // Update playlist display
+                renderPlaylist();
+                
+                // Show save button
+                saveLocationsContainer.style.display = 'block';
+                
+                // Close modal
+                closeLocationModal();
+                
+                // Update now playing info if this is the current song
+                if (songIndex === currentSongIndex) {
+                    originInfo.textContent = `Origin: ${song.location}`;
+                    
+                    // Update the playing marker appearance
+                    updatePlayingMarker();
+                }
+            }
+        }
+
+        // Format time from seconds to mm:ss
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Update the marker for the currently playing song
+        function updatePlayingMarker() {
+            // Reset all markers to normal style
+            Object.values(markers).forEach(marker => {
+                marker.getElement().classList.remove('playing');
+            });
+            
+            // Set the current song's marker to playing style
+            if (currentPlaylist[currentSongIndex] && markers[currentPlaylist[currentSongIndex].id]) {
+                markers[currentPlaylist[currentSongIndex].id].getElement().classList.add('playing');
+            }
+        }
+
+        // Play song using Spotify Web Playback SDK
+        function playSong(song) {
+            console.log(`Playing song: ${song.title}`);
+            if (!player || !deviceId) {
+                console.log("Using embedded player (no SDK player available)");
+                // Fallback for free users: use embedded player
+                spotifyPlayerDiv.innerHTML = `
+                    <iframe src="https://open.spotify.com/embed/track/${song.id}" 
+                        width="100%" height="80" frameborder="0" allowtransparency="true" 
+                        allow="encrypted-media">
+                    </iframe>
+                `;
+                isPlaying = true;
+                playBtn.textContent = 'Playing via Embed';
+                playBtn.disabled = true;
+                
+                // Update display
+                updateNowPlaying(song);
+                return;
+            }
+            
+            fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${userToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    uris: [song.uri]
+                })
+            })
+            .then(() => {
+                isPlaying = true;
+                playBtn.textContent = 'Pause';
+                playBtn.disabled = false;
+                
+                // Update display
+                updateNowPlaying(song);
+            })
+            .catch(error => {
+                console.error('Error playing track:', error);
+                
+                // Fallback to embedded player on error
+                spotifyPlayerDiv.innerHTML = `
+                    <iframe src="https://open.spotify.com/embed/track/${song.id}" 
+                        width="100%" height="80" frameborder="0" allowtransparency="true" 
+                        allow="encrypted-media">
+                    </iframe>
+                `;
+                
+                isPlaying = true;
+                playBtn.textContent = 'Playing via Embed';
+                playBtn.disabled = true;
+                
+                // Update display
+                updateNowPlaying(song);
+            });
+        }
+        
+        // Update now playing display
+        function updateNowPlaying(song) {
+            nowPlayingText.textContent = `${song.title} - ${song.artist}`;
+            originInfo.textContent = `Origin: ${song.location}`;
+            
+            if (song.albumArt) {
+                currentAlbumArt.src = song.albumArt;
+                currentAlbumArt.style.display = 'block';
+            } else {
+                currentAlbumArt.style.display = 'none';
+            }
+            
+            // Update the marker for the playing song
+            updatePlayingMarker();
+            
+            // Center map on song location if available
+            if (song.coordinates && song.location !== 'Unknown Location') {
+                map.flyTo({
+                    center: song.coordinates,
+                    zoom: 10,
+                    essential: true
+                });
+                
+                // Highlight the marker by showing its popup
+                if (markers[song.id]) {
+                    markers[song.id].togglePopup();
+                }
+            }
+            
+            // Update playing class in playlist
+            document.querySelectorAll('.playlist-item').forEach((item, index) => {
+                if (index === currentSongIndex) {
+                    item.classList.add('playing');
+                } else {
+                    item.classList.remove('playing');
+                }
+            });
+        }
+
+        // Toggle play/pause
+        function togglePlay() {
+            if (!currentPlaylist.length) return;
+            
+            if (isPlaying) {
+                console.log("Pausing playback");
+                // Pause current track
+                if (player && deviceId) {
+                    fetch('https://api.spotify.com/v1/me/player/pause', {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${userToken}`
+                        }
+                    })
+                    .then(() => {
+                        isPlaying = false;
+                        playBtn.textContent = 'Play';
+                    })
+                    .catch(error => {
+                        console.error('Error pausing track:', error);
+                    });
+                } else {
+                    // For embedded player, just update state
+                    isPlaying = false;
+                    playBtn.textContent = 'Play';
+                }
+            } else {
+                console.log("Resuming playback");
+                // Play current track
+                playSong(currentPlaylist[currentSongIndex]);
+            }
+        }
+
+        // Play next song
+        function playNext() {
+            if (!currentPlaylist.length) return;
+            
+            currentSongIndex = (currentSongIndex + 1) % currentPlaylist.length;
+            console.log(`Playing next song (index ${currentSongIndex})`);
+            playSong(currentPlaylist[currentSongIndex]);
+        }
+
+        // Play previous song
+        function playPrevious() {
+            if (!currentPlaylist.length) return;
+            
+            currentSongIndex = (currentSongIndex - 1 + currentPlaylist.length) % currentPlaylist.length;
+            console.log(`Playing previous song (index ${currentSongIndex})`);
+            playSong(currentPlaylist[currentSongIndex]);
+        }
+
+        // Initialize Spotify Web Playback SDK
+        window.onSpotifyWebPlaybackSDKReady = () => {
+            console.log("Spotify Web Playback SDK ready");
+            player = new Spotify.Player({
+                name: 'GeoMusic Player',
+                getOAuthToken: cb => { cb(userToken); },
+                volume: 0.5
+            });
+            
+            // Error handling
+            player.addListener('initialization_error', ({ message }) => {
+                console.error('Initialization error:', message);
+            });
+            
+            player.addListener('authentication_error', ({ message }) => {
+                console.error('Authentication error:', message);
+                alert('Authentication error. Please reconnect to Spotify.');
+            });
+            
+            player.addListener('account_error', ({ message }) => {
+                console.error('Account error:', message);
+                alert('This functionality requires a Spotify Premium account.');
+            });
+            
+            player.addListener('playback_error', ({ message }) => {
+                console.error('Playback error:', message);
+            });
+            
+            // Playback status updates
+            player.addListener('player_state_changed', state => {
+                if (!state) return;
+                
+                isPlaying = !state.paused;
+                playBtn.textContent = isPlaying ? 'Pause' : 'Play';
+            });
+            
+            // Ready
+            player.addListener('ready', ({ device_id }) => {
+                console.log('Ready with Device ID', device_id);
+                deviceId = device_id;
+            });
+            
+            // Not Ready
+            player.addListener('not_ready', ({ device_id }) => {
+                console.log('Device ID has gone offline', device_id);
+                deviceId = null;
+            });
+            
+            // Connect to the player
+            player.connect();
+        };
+
+        // Enhanced feature: Export custom locations
+        function exportCustomLocations() {
+            console.log("Exporting custom locations");
+            const dataStr = JSON.stringify(customLocations, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'geomusic_locations.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        // Enhanced feature: Import custom locations
+        function importCustomLocations(jsonData) {
+            try {
+                console.log("Importing custom locations");
+                const importedLocations = JSON.parse(jsonData);
+                
+                // Merge with existing locations
+                customLocations = { ...customLocations, ...importedLocations };
+                
+                // Save to localStorage
+                saveCustomLocations();
+                
+                // Update current playlist with imported locations
+                let updatedCount = 0;
+                
+                currentPlaylist.forEach(song => {
+                    if (customLocations[song.id]) {
+                        song.location = customLocations[song.id].name;
+                        song.coordinates = customLocations[song.id].coordinates;
+                        song.isCustomLocation = true;
+                        
+                        // Update marker
+                        addMarkerForSong(song);
+                        
+                        updatedCount++;
+                    }
+                });
+                
+                if (updatedCount > 0) {
+                    console.log(`Updated ${updatedCount} songs with imported locations`);
+                    // Update playlist display
+                    renderPlaylist();
+                    
+                    // Update map view
+                    updateMapView();
+                    
+                    return updatedCount;
+                }
+                
+                return 0;
+            } catch (error) {
+                console.error('Error importing locations:', error);
+                return -1;
+            }
+        }
+
+        // Enhanced feature: Add Import/Export buttons to UI
+        function addImportExportButtons() {
+            console.log("Adding import/export buttons");
+            const importExportContainer = document.createElement('div');
+            importExportContainer.style.marginTop = '10px';
+            importExportContainer.style.display = 'flex';
+            importExportContainer.style.gap = '10px';
+            
+            const exportButton = document.createElement('button');
+            exportButton.textContent = 'Export Locations';
+            exportButton.className = 'save-locations-btn';
+            exportButton.style.backgroundColor = '#17a2b8';
+            exportButton.addEventListener('click', exportCustomLocations);
+            
+            const importButton = document.createElement('button');
+            importButton.textContent = 'Import Locations';
+            importButton.className = 'save-locations-btn';
+            importButton.style.backgroundColor = '#6c757d';
+            
+            const importInput = document.createElement('input');
+            importInput.type = 'file';
+            importInput.accept = '.json';
+            importInput.style.display = 'none';
+            
+            importButton.addEventListener('click', () => {
+                importInput.click();
+            });
+            
+            importInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = (event) => {
+                        const result = importCustomLocations(event.target.result);
+                        
+                        if (result > 0) {
+                            alert(`Successfully imported locations for ${result} songs.`);
+                        } else if (result === 0) {
+                            alert('No locations were imported for the current playlist.');
+                        } else {
+                            alert('Error importing locations. Please check the file format.');
+                        }
+                    };
+                    
+                    reader.readAsText(file);
+                }
+            });
+            
+            importExportContainer.appendChild(exportButton);
+            importExportContainer.appendChild(importButton);
+            importExportContainer.appendChild(importInput);
+            
+            saveLocationsContainer.appendChild(importExportContainer);
+        }
+
+        // Main initialization function
+        function init() {
+            console.log("Initializing application...");
+            
+            // Initialize DOM elements
+            initializeElements();
+            
+            // Verify critical elements exist
+            if (!loginButton) {
+                console.error("Login button not found in DOM");
+                return;
+            }
+            
+            if (!map) {
+                console.error("Map initialization failed");
+            }
+            
+            // Check if returning from Spotify auth
+            if (!checkAuth()) {
+                console.log("Not authenticated, showing login button");
+                // If not authenticated, show login button
+                spotifyLoginSection.style.display = 'block';
+                spotifyConnectedSection.style.display = 'none';
+            } else {
+                console.log("User authenticated, initializing features");
+                // Add enhanced UI features
+                addImportExportButtons();
+            }
+        }
+
+        // Wait for DOM to be fully loaded before initializing
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM fully loaded");
+            init();
+        });
+
+        // Let the map finish loading
+        map.on('load', function() {
+            console.log("Map fully loaded");
+        });
+    </script>
+</body>
+</html>

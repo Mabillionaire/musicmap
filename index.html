@@ -12,7 +12,7 @@
             padding: 0;
             height: 100%;
             font-family: 'Circular', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            color: #191414;
+            color: #FFFFFF;
             background-color: #121212;
         }
         #container {
@@ -30,6 +30,12 @@
             color: #FFFFFF;
             padding: 20px;
             border-top: 1px solid #333;
+        }
+        #player-container label {
+            color: #FFFFFF;
+            font-size: 14px;
+            margin-bottom: 5px;
+            display: block;
         }
         #playlist-container {
             max-height: 200px;
@@ -112,6 +118,9 @@
         .song-time {
             color: #b3b3b3;
         }
+        .mapboxgl-popup {
+            max-width: 300px !important;
+        }
         .mapboxgl-popup-content {
             max-width: 250px;
             padding: 15px;
@@ -120,12 +129,43 @@
             color: #FFFFFF;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
+        .mapboxgl-popup-close-button {
+            color: #FFFFFF;
+            font-size: 20px;
+            padding: 5px 10px;
+        }
+        .mapboxgl-popup-close-button:hover {
+            background-color: transparent;
+            color: #1DB954;
+        }
         .album-art {
             width: 45px;
             height: 45px;
             margin-right: 12px;
             border-radius: 4px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .mapboxgl-ctrl-group {
+            background-color: #282828 !important;
+            border-radius: 8px !important;
+        }
+        .mapboxgl-ctrl button {
+            background-color: #282828 !important;
+        }
+        .mapboxgl-ctrl button:hover {
+            background-color: #333 !important;
+        }
+        .mapboxgl-ctrl-icon {
+            filter: invert(1);
+        }
+        #spotify-connected-section {
+            color: #FFFFFF;
+        }
+        /* Make album art larger and improve visibility */
+        #current-album-art {
+            width: 70px !important;
+            height: 70px !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
         .playlist-select {
             margin: 12px 0;
@@ -348,6 +388,10 @@
             100% {
                 box-shadow: 0 0 0 0 rgba(29, 185, 84, 0);
             }
+        }
+        iframe {
+            border-radius: 8px;
+            background-color: #121212;
         }
     </style>
 </head>

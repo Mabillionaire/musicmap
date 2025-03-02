@@ -336,7 +336,7 @@
         const scopes = 'user-read-private user-read-email playlist-read-private streaming user-read-playback-state user-modify-playback-state';
         
         // Mapbox Access Token
-        const mapboxToken = 'pk.eyJ1IjoibWlrZWJtYWRlYXRtYWIiLCJhIjoiY203cWo5aHlyMHoydzJrb3BkNzFqYm96MSJ9.twdMCysut89-nVAtXUnVwQ';
+        const mapboxToken = 'pk.eyJ1IjoibWFiaWxsaW9uYWlyZSIsImEiOiJja3Q2MXBkODYwOHp2MnZwOGRrZ2l4ZzI3In0.vww8YU1afCCuZtHZbOeQ-w';
         
         // Initialize map
         let map;
@@ -345,13 +345,20 @@
             mapboxgl.accessToken = mapboxToken;
             map = new mapboxgl.Map({
                 container: 'map',
-                style: 'mapbox://styles/mapbox/streets-v12',
+                style: 'mapbox://styles/mapbox/light-v11', // Using a simpler style for better reliability
                 center: [0, 20], // [longitude, latitude]
-                zoom: 2
+                zoom: 2,
+                attributionControl: true
             });
             
             // Add navigation controls
             map.addControl(new mapboxgl.NavigationControl());
+            
+            // Add error handling for map
+            map.on('error', function(e) {
+                console.error('Mapbox map error:', e);
+                document.getElementById('map').innerHTML = '<div style="padding: 20px; text-align: center; background-color: #f8d7da; color: #721c24;">Error loading map: ' + e.error.message + '</div>';
+            });
             
             console.log("Mapbox map initialized successfully");
         } catch (error) {
@@ -819,8 +826,8 @@
                 console.log(`Searching for location using Mapbox: ${query}`);
                 
                 // Mapbox geocoding API URL
-                const geocodingUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&limit=5`;
-                console.log("Making Mapbox geocoding request");
+                const geocodingUrl = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&limit=5&types=place,country,region`;
+                console.log("Making Mapbox geocoding request to:", geocodingUrl);
                 
                 // Make the fetch request
                 const response = await fetch(geocodingUrl);
@@ -850,11 +857,29 @@
                                 lat: feature.center[1], // Mapbox uses [longitude, latitude] format
                                 lon: feature.center[0]
                             };
+                            
+                            // Show location on map immediately for preview
+                            map.flyTo({
+                                center: [locationData.lon, locationData.lat],
+                                zoom: 8,
+                                essential: true
+                            });
+                            
+                            // Set the custom location
                             setCustomLocation(locationData);
                         });
                         
                         searchResults.appendChild(resultItem);
                     });
+                    
+                    // Center the map on the first result for preview
+                    if (data.features.length > 0) {
+                        const firstFeature = data.features[0];
+                        map.flyTo({
+                            center: firstFeature.center,
+                            zoom: 8
+                        });
+                    }
                 } else {
                     searchResults.innerHTML = '<p>No locations found. Try a different search term.</p>';
                     // Fall back to local database

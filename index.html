@@ -279,7 +279,7 @@
     <div id="container">
         <div id="map"></div>
         <div id="player-container">
-            <div id="spotify-login-section" class="login-container">
+            <div id="spotify-login-section" class="login-container" style="display: block;">
                 <p>Connect to Spotify to load your playlists</p>
                 <button class="spotify-login" id="login-button">Connect to Spotify</button>
             </div>
@@ -336,13 +336,17 @@
         const scopes = 'user-read-private user-read-email playlist-read-private streaming user-read-playback-state user-modify-playback-state';
         
         // Mapbox Access Token
-        const mapboxToken = 'pk.eyJ1IjoibWFiaWxsaW9uYWlyZSIsImEiOiJja3Q2MXBkODYwOHp2MnZwOGRrZ2l4ZzI3In0.vww8YU1afCCuZtHZbOeQ-w';
+        const mapboxToken = 'pk.eyJ1IjoibWlrZWJtYWRlYXRtYWIiLCJhIjoiY203cWlnaWdmMG9oYTJpb2FxamJ1c2ZhYyJ9.q2nSl5TPa7Hv1GjNqb1F_A';
         
         // Initialize map
         let map;
         try {
             console.log("Initializing Mapbox map...");
             mapboxgl.accessToken = mapboxToken;
+            
+            // Suppress Mapbox analytics errors
+            mapboxgl.config.EVENTS_URL = ''; // Set to empty to prevent analytics calls
+            
             map = new mapboxgl.Map({
                 container: 'map',
                 style: 'mapbox://styles/mapbox/light-v11', // Using a simpler style for better reliability
@@ -415,6 +419,12 @@
             // Log elements to verify they're found
             console.log("Login button found:", !!loginButton);
             console.log("Map initialized:", !!map);
+            console.log("Spotify login section found:", !!spotifyLoginSection);
+            
+            // Make sure Spotify login section is visible
+            if (spotifyLoginSection) {
+                spotifyLoginSection.style.display = 'block';
+            }
             
             // Initialize event listeners
             if (loginButton) {
@@ -429,6 +439,7 @@
                         alert("Error connecting to Spotify. Please check console for details.");
                     }
                 });
+                console.log("Login button event listener attached");
             } else {
                 console.error("Could not initialize login button");
             }

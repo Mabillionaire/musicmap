@@ -1,0 +1,5 @@
+[33mcommit b37c6085ea340be8dd6ff4f18d68e266e73642ad[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m
+Author: michaelb <michaelb@northpointgis.com>
+Date:   Sat Mar 1 23:52:04 2025 -0600
+
+    Fix Mapbox display issues and improve location search

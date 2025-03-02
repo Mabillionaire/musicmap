@@ -677,20 +677,21 @@
                 markers[song.id].remove();
             }
             
-            // Only add markers for tracks with valid coordinates and ensure longitude first for Mapbox
-            if (song.location !== 'Unknown Location' && (song.coordinates[0] !== 0 || song.coordinates[1] !== 0)) {
+            // Only add markers for tracks with valid coordinates
+            if (song.location !== 'Unknown Location' && song.coordinates && song.coordinates.length === 2) {
+                console.log(`Adding marker for ${song.title} at coordinates:`, song.coordinates);
+                
                 // Create a custom HTML element for the marker
                 const el = document.createElement('div');
                 el.className = 'marker';
                 
-                // Adjust coordinates order for Mapbox if needed
-                // Mapbox uses [longitude, latitude]
-                let lngLat = song.coordinates;
+                // Get coordinates - already in [longitude, latitude] format for Mapbox
+                const lngLat = song.coordinates;
                 
-                // Make sure coordinates are in the right order (Mapbox expects [lng, lat])
-                if (Math.abs(lngLat[0]) <= 90 && Math.abs(lngLat[1]) <= 180) {
-                    // If the first coordinate is likely latitude, swap them
-                    lngLat = [lngLat[1], lngLat[0]];
+                // Validate coordinates
+                if (Math.abs(lngLat[0]) > 180 || Math.abs(lngLat[1]) > 90) {
+                    console.error("Invalid coordinates for marker:", lngLat);
+                    return; // Skip this marker
                 }
                 
                 // Create popup content
@@ -712,6 +713,10 @@
                 
                 markers[song.id] = marker;
                 popups[song.id] = popup;
+                
+                console.log(`Marker added for ${song.title} at:`, marker.getLngLat());
+            } else {
+                console.log(`Skipping marker for ${song.title} - invalid coordinates:`, song.coordinates);
             }
         }
         
@@ -995,8 +1000,20 @@
                 
                 // Update song data
                 song.location = locationData.display_name.split(',')[0].trim();
+                
                 // Store coordinates in [longitude, latitude] order for Mapbox
-                song.coordinates = [parseFloat(locationData.lon), parseFloat(locationData.lat)];
+                // Make sure we have valid numbers for the coordinates
+                const lon = parseFloat(locationData.lon);
+                const lat = parseFloat(locationData.lat);
+                
+                if (isNaN(lon) || isNaN(lat)) {
+                    console.error("Invalid coordinates:", locationData);
+                    alert("Error: Invalid coordinates. Please try another location.");
+                    return;
+                }
+                
+                console.log(`Setting coordinates for ${song.title}: [${lon}, ${lat}]`);
+                song.coordinates = [lon, lat];
                 song.isCustomLocation = true;
                 
                 // Save to custom locations

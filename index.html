@@ -11,7 +11,9 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            font-family: Arial, sans-serif;
+            font-family: 'Circular', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #191414;
+            background-color: #121212;
         }
         #container {
             display: flex;
@@ -24,146 +26,181 @@
             min-height: 400px;
         }
         #player-container {
-            background-color: #f0f0f0;
-            padding: 15px;
-            border-top: 1px solid #ccc;
+            background-color: #121212;
+            color: #FFFFFF;
+            padding: 20px;
+            border-top: 1px solid #333;
         }
         #playlist-container {
             max-height: 200px;
             overflow-y: auto;
-            background-color: #f9f9f9;
-            border-top: 1px solid #eee;
+            background-color: #121212;
+            border-top: 1px solid #333;
         }
         .playlist-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: #FFFFFF;
+            transition: background-color 0.2s ease;
         }
         .playlist-item:hover {
-            background-color: #e6e6e6;
+            background-color: #282828;
         }
         .playlist-item.playing {
-            background-color: #d1e7dd;
+            background-color: #2a2a2a;
+            border-left: 3px solid #1DB954;
         }
         .controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         .spotify-login {
             background-color: #1DB954;
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 20px;
+            padding: 12px 24px;
+            border-radius: 30px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
         }
         .spotify-login:hover {
-            background-color: #1aa34a;
+            background-color: #1ed760;
+            transform: scale(1.03);
         }
         .controls button {
-            background-color: #3498db;
+            background-color: #1DB954;
             color: white;
             border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
+            padding: 10px 16px;
+            border-radius: 30px;
             cursor: pointer;
-            margin-right: 5px;
+            margin-right: 8px;
+            font-weight: bold;
+            transition: all 0.2s ease;
         }
         .controls button:hover {
-            background-color: #2980b9;
+            background-color: #1ed760;
+            transform: scale(1.05);
         }
         .now-playing {
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
+            color: #FFFFFF;
         }
         .now-playing img {
-            margin-right: 10px;
-            border-radius: 3px;
+            margin-right: 15px;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
         #origin-info {
-            margin-top: 5px;
+            margin-top: 8px;
             font-style: italic;
+            color: #b3b3b3;
         }
         .song-time {
-            color: #666;
+            color: #b3b3b3;
         }
         .mapboxgl-popup-content {
             max-width: 250px;
             padding: 15px;
+            border-radius: 10px;
+            background-color: rgba(18, 18, 18, 0.9);
+            color: #FFFFFF;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
         .album-art {
-            width: 40px;
-            height: 40px;
-            margin-right: 10px;
-            border-radius: 3px;
+            width: 45px;
+            height: 45px;
+            margin-right: 12px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         .playlist-select {
-            margin: 10px 0;
-            padding: 8px;
+            margin: 12px 0;
+            padding: 10px 15px;
             width: 100%;
             max-width: 300px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
+            border-radius: 30px;
+            border: 1px solid #333;
+            background-color: #282828;
+            color: #FFFFFF;
+            font-family: inherit;
+            outline: none;
+        }
+        .playlist-select:focus {
+            border-color: #1DB954;
         }
         .loading {
             text-align: center;
             padding: 20px;
             font-style: italic;
-            color: #666;
+            color: #b3b3b3;
         }
         .song-details {
             flex: 1;
         }
         .login-container {
             text-align: center;
-            padding: 20px;
+            padding: 30px;
+            color: #FFFFFF;
         }
         #spotify-player {
-            margin-top: 10px;
+            margin-top: 15px;
+            border-radius: 8px;
+            overflow: hidden;
         }
-        /* New styles for location editing */
+        /* Location editing styles */
         .location-editor {
             display: flex;
-            gap: 5px;
-            margin-top: 2px;
+            gap: 8px;
+            margin-top: 5px;
         }
         .location-editor input {
             flex: 1;
-            padding: 3px 5px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
+            padding: 6px 12px;
+            border: 1px solid #333;
+            border-radius: 20px;
+            background-color: #282828;
+            color: #FFFFFF;
         }
         .location-editor button {
-            background-color: #28a745;
+            background-color: #1DB954;
             color: white;
             border: none;
-            padding: 3px 6px;
-            border-radius: 3px;
+            padding: 5px 10px;
+            border-radius: 20px;
             cursor: pointer;
             font-size: 12px;
+            transition: all 0.2s ease;
         }
         .location-editor button:hover {
-            background-color: #218838;
+            background-color: #1ed760;
         }
         .edit-location-btn {
             background-color: transparent;
             border: none;
-            color: #007bff;
+            color: #1DB954;
             cursor: pointer;
             font-size: 12px;
             margin-left: 5px;
             padding: 0;
+            transition: all 0.2s ease;
         }
         .edit-location-btn:hover {
             text-decoration: underline;
+            color: #1ed760;
         }
         #location-search-modal {
             display: none;
@@ -172,7 +209,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.7);
             z-index: 1000;
         }
         .modal-content {
@@ -180,81 +217,107 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: white;
-            padding: 20px;
-            border-radius: 5px;
+            background-color: #121212;
+            padding: 25px;
+            border-radius: 10px;
             max-width: 500px;
             width: 90%;
+            color: #FFFFFF;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         .modal-header h3 {
             margin: 0;
+            color: #FFFFFF;
         }
         .close-modal {
             background: transparent;
             border: none;
-            font-size: 20px;
+            font-size: 24px;
             cursor: pointer;
+            color: #b3b3b3;
+        }
+        .close-modal:hover {
+            color: #FFFFFF;
         }
         #location-search-input {
             width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+            border-radius: 30px;
+            background-color: #282828;
+            color: #FFFFFF;
+            font-family: inherit;
+        }
+        #location-search-input:focus {
+            border-color: #1DB954;
+            outline: none;
         }
         #search-location-btn {
-            background-color: #3498db;
+            background-color: #1DB954;
             color: white;
             border: none;
-            padding: 8px 12px;
-            border-radius: 4px;
+            padding: 10px 20px;
+            border-radius: 30px;
             cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        #search-location-btn:hover {
+            background-color: #1ed760;
+            transform: scale(1.03);
         }
         #search-results {
-            margin-top: 15px;
+            margin-top: 20px;
             max-height: 300px;
             overflow-y: auto;
+            border-radius: 8px;
+            background-color: #282828;
         }
         .search-result-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
             cursor: pointer;
+            transition: background-color 0.2s ease;
         }
         .search-result-item:hover {
-            background-color: #f5f5f5;
+            background-color: #333;
         }
         .save-locations-btn {
-            background-color: #28a745;
+            background-color: #1DB954;
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
+            padding: 10px 20px;
+            border-radius: 30px;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 12px;
+            font-weight: bold;
+            transition: all 0.2s ease;
         }
         .save-locations-btn:hover {
-            background-color: #218838;
+            background-color: #1ed760;
+            transform: scale(1.03);
         }
         #save-locations-container {
             text-align: center;
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #e9f7ef;
-            border-radius: 4px;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #282828;
+            border-radius: 8px;
             display: none;
         }
         .unknown-location {
-            color: #dc3545;
+            color: #e74c3c;
             font-style: italic;
         }
         .custom-location {
-            color: #28a745;
+            color: #1DB954;
             font-weight: bold;
         }
         /* Custom marker style */
@@ -264,14 +327,27 @@
             height: 30px;
             border-radius: 50%;
             cursor: pointer;
-            background-color: #3498db;
+            background-color: #1DB954;
             border: 2px solid white;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
         }
         .marker.playing {
-            background-color: #1DB954;
-            transform: scale(1.2);
-            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+            background-color: #1ed760;
+            transform: scale(1.3);
+            box-shadow: 0 0 12px rgba(29, 185, 84, 0.8);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.8);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(29, 185, 84, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(29, 185, 84, 0);
+            }
         }
     </style>
 </head>
@@ -349,7 +425,7 @@
             
             map = new mapboxgl.Map({
                 container: 'map',
-                style: 'mapbox://styles/mapbox/light-v11', // Using a simpler style for better reliability
+                style: 'mapbox://styles/mapbox/streets-v12', // Using a more colorful style
                 center: [0, 20], // [longitude, latitude]
                 zoom: 2,
                 attributionControl: true
@@ -696,10 +772,10 @@
                 
                 // Create popup content
                 const popupContent = `
-                    <strong>${song.title}</strong><br>
-                    ${song.artist}<br>
-                    ${song.location}
-                    ${song.isCustomLocation ? '<br><em>(Custom location)</em>' : ''}
+                    <strong style="color: #1DB954">${song.title}</strong><br>
+                    <span style="color: #FFFFFF">${song.artist}</span><br>
+                    <span style="color: #b3b3b3">${song.location}</span>
+                    ${song.isCustomLocation ? '<br><em style="color: #1DB954">(Custom location)</em>' : ''}
                 `;
                 
                 const popup = new mapboxgl.Popup({ offset: 25 })
@@ -1056,7 +1132,7 @@
 
         // Update the marker for the currently playing song
         function updatePlayingMarker() {
-            // Reset all markers to normal style
+            // Remove playing style from all markers
             Object.values(markers).forEach(marker => {
                 marker.getElement().classList.remove('playing');
             });

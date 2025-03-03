@@ -393,11 +393,119 @@
             border-radius: 8px;
             background-color: #121212;
         }
+        /* Add new styles for save/share buttons */
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1;
+            display: flex;
+            gap: 10px;
+        }
+        .map-control-btn {
+            background-color: #282828;
+            color: #FFFFFF;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .map-control-btn:hover {
+            background-color: #1DB954;
+            transform: scale(1.05);
+        }
+        .map-control-btn i {
+            font-size: 16px;
+        }
+        /* Share modal styles */
+        .share-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .share-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #121212;
+            padding: 25px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            color: #FFFFFF;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .share-link-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .share-link-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 20px;
+            background-color: #282828;
+            color: #FFFFFF;
+            font-family: inherit;
+        }
+        .copy-btn {
+            background-color: #1DB954;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        .copy-btn:hover {
+            background-color: #1ed760;
+            transform: scale(1.05);
+        }
+        .copy-success {
+            position: absolute;
+            top: -30px;
+            right: 0;
+            background-color: #1DB954;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .copy-success.show {
+            opacity: 1;
+        }
     </style>
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div id="container">
-        <div id="map"></div>
+        <div id="map">
+            <!-- Add map controls -->
+            <div class="map-controls">
+                <button class="map-control-btn" id="save-map-btn">
+                    <i class="fas fa-save"></i> Save Map
+                </button>
+                <button class="map-control-btn" id="share-map-btn">
+                    <i class="fas fa-share-alt"></i> Share
+                </button>
+            </div>
+        </div>
         <div id="player-container">
             <div id="spotify-login-section" class="login-container" style="display: block;">
                 <p>Connect to Spotify to load your playlists</p>
@@ -442,6 +550,22 @@
             <input type="text" id="location-search-input" placeholder="Enter a city, landmark, or place">
             <button id="search-location-btn">Search</button>
             <div id="search-results"></div>
+        </div>
+    </div>
+
+    <!-- Add Share Modal -->
+    <div id="share-modal" class="share-modal">
+        <div class="share-modal-content">
+            <div class="modal-header">
+                <h3>Share Your Map</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <p>Share this link with others to let them see your map with all custom locations:</p>
+            <div class="share-link-container">
+                <input type="text" id="share-link" class="share-link-input" readonly>
+                <button id="copy-link-btn" class="copy-btn">Copy Link</button>
+                <div class="copy-success">Link copied!</div>
+            </div>
         </div>
     </div>
 
@@ -510,6 +634,14 @@
         let customLocations = {};
         let popups = {};
 
+        // Add new variables for save/share functionality
+        let shareModal;
+        let shareLinkInput;
+        let copyLinkBtn;
+        let copySuccessMessage;
+        let saveMapBtn;
+        let shareMapBtn;
+
         // Initialize elements after DOM is loaded
         function initializeElements() {
             console.log("Initializing DOM elements...");
@@ -535,6 +667,14 @@
             locationSearchInput = document.getElementById('location-search-input');
             searchLocationBtn = document.getElementById('search-location-btn');
             searchResults = document.getElementById('search-results');
+
+            // Initialize save/share elements
+            shareModal = document.getElementById('share-modal');
+            shareLinkInput = document.getElementById('share-link');
+            copyLinkBtn = document.getElementById('copy-link-btn');
+            copySuccessMessage = document.querySelector('.copy-success');
+            saveMapBtn = document.getElementById('save-map-btn');
+            shareMapBtn = document.getElementById('share-map-btn');
 
             // Log elements to verify they're found
             console.log("Login button found:", !!loginButton);
@@ -587,6 +727,17 @@
             // Add event listener for saving custom locations
             if (saveLocationsBtn) {
                 saveLocationsBtn.addEventListener('click', saveCustomLocations);
+            }
+
+            // Add event listeners for save/share buttons
+            if (saveMapBtn) {
+                saveMapBtn.addEventListener('click', saveMap);
+            }
+            if (shareMapBtn) {
+                shareMapBtn.addEventListener('click', shareMap);
+            }
+            if (copyLinkBtn) {
+                copyLinkBtn.addEventListener('click', copyShareLink);
             }
         }
 
@@ -1525,6 +1676,96 @@
             saveLocationsContainer.appendChild(importExportContainer);
         }
 
+        // Save map state
+        function saveMap() {
+            const mapState = {
+                customLocations: customLocations,
+                center: map.getCenter(),
+                zoom: map.getZoom(),
+                timestamp: new Date().toISOString()
+            };
+
+            // Save to localStorage
+            localStorage.setItem('geomusic_map_state', JSON.stringify(mapState));
+            
+            // Show success message
+            const originalText = saveMapBtn.innerHTML;
+            saveMapBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+            setTimeout(() => {
+                saveMapBtn.innerHTML = originalText;
+            }, 2000);
+        }
+
+        // Share map
+        function shareMap() {
+            // Generate shareable link with current state
+            const mapState = {
+                customLocations: customLocations,
+                center: map.getCenter(),
+                zoom: map.getZoom()
+            };
+
+            // Create a shareable URL with the state encoded
+            const shareUrl = new URL(window.location.href);
+            shareUrl.searchParams.set('state', btoa(JSON.stringify(mapState)));
+            
+            // Show share modal
+            shareLinkInput.value = shareUrl.toString();
+            shareModal.style.display = 'block';
+        }
+
+        // Copy share link
+        function copyShareLink() {
+            shareLinkInput.select();
+            document.execCommand('copy');
+            
+            // Show success message
+            copySuccessMessage.classList.add('show');
+            setTimeout(() => {
+                copySuccessMessage.classList.remove('show');
+            }, 2000);
+        }
+
+        // Load map state from URL if present
+        function loadMapState() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const stateParam = urlParams.get('state');
+            
+            if (stateParam) {
+                try {
+                    const mapState = JSON.parse(atob(stateParam));
+                    
+                    // Apply custom locations
+                    if (mapState.customLocations) {
+                        customLocations = mapState.customLocations;
+                        saveCustomLocations(); // Save to localStorage
+                    }
+                    
+                    // Apply map view
+                    if (mapState.center && mapState.zoom) {
+                        map.flyTo({
+                            center: mapState.center,
+                            zoom: mapState.zoom,
+                            essential: true
+                        });
+                    }
+                    
+                    // Update markers if we have a current playlist
+                    if (currentPlaylist.length > 0) {
+                        clearAllMarkers();
+                        currentPlaylist.forEach(song => {
+                            if (song.location !== 'Unknown Location' && (song.coordinates[0] !== 0 || song.coordinates[1] !== 0)) {
+                                addMarkerForSong(song);
+                            }
+                        });
+                        updateMapView();
+                    }
+                } catch (error) {
+                    console.error('Error loading map state:', error);
+                }
+            }
+        }
+
         // Main initialization function
         function init() {
             console.log("Initializing application...");
@@ -1553,6 +1794,9 @@
                 // Add enhanced UI features
                 addImportExportButtons();
             }
+
+            // Load map state from URL if present
+            loadMapState();
         }
 
         // Wait for DOM to be fully loaded before initializing
